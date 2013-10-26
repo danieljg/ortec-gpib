@@ -12,7 +12,7 @@
 #include "gpib/ib.h"
 #define strsize    40
 #define skip       9
-#define max_counts 12//0
+#define max_counts 60//0
 
 /* function declarations */
 // write a string to the counter
@@ -37,12 +37,22 @@ int main () {
  int data0; int data1; int data2; int data3;
  int count_idx;
  int counter;
+ int j;
+ double array1[30];
  const int minor = 0;
  const int pad   = 4;//configurable on the 974 by switches
  const int sad   = 0;
  const int send_eoi = 1;
  const int eos_mode = 0;
  const int timeout = T1s;
+ for(j=0;j<30;j++){
+  array1[j]=0.0;
+ }
+
+ //make gnuplot pipe and load the startup script
+ FILE *pipe_gp = popen("gnuplot -persist","w");
+ fputs("load 'startup.p'\n", pipe_gp);
+
  //find the ortec counter
  counter =  ibdev(minor, pad, sad, timeout, send_eoi, eos_mode);
  //read startup string
@@ -52,38 +62,30 @@ int main () {
  //initialize device
  gpibwrite(counter,"INIT\n");
  //read ok string
- //puts("INITIALIZE RESPONSE\n");
  memset(response,0,strsize);
  gpibread(counter, response);
- //puts("INITIALIZE RESPONSE\n");
  memset(response,0,strsize);
  gpibread(counter, response);
-
 
  // set to computer mode
  gpibwrite(counter,"COMPUTER\n");
  //read ok string
- //puts("COMPUTER MODE RESPONSE\n");
  memset(response,0,strsize);
  gpibread(counter, response);
  //set to remote control
  gpibwrite(counter,"ENABLE_REMOTE\n");
- //puts("REMOTE MODE RESPONSE\n");
  memset(response,0,strsize);
  gpibread(counter, response);
  //auto-transmit counter data at end of scan
  gpibwrite(counter,"ENABLE_ALARM\n");
- //puts("ENABLE ALARM RESPONSE\n");
  memset(response,0,strsize);
  gpibread(counter, response);
  //display channel 2
  gpibwrite(counter,"SET_DISP 2\n");
- //puts("SET RESPONSE\n");
  memset(response,0,strsize);
  gpibread(counter, response);
  //set the counter for a second
  gpibwrite(counter,"SET_COU_PR 1,1\n");
- //puts("SET_COU_PR RESPONSE\n");
  memset(response,0,strsize);
  gpibread(counter, response);
 
@@ -91,18 +93,20 @@ int main () {
 
   //clear counters
   gpibwrite(counter,"CL_COU\n");
-  //puts("CL_COU RESPONSE\n");
   memset(response,0,strsize);
   gpibread(counter, response);
 
   //start the count
   gpibwrite(counter,"START\n");
-  //puts("COUNT RESPONSE 1\n");
   memset(response,0,strsize);
   gpibread(counter, response);
-  //puts("COUNT RESPONSE 2\n");
   memset(response,0,strsize);
   gpibread(counter, cdata);
+
+  //stop counter (why?)
+  gpibwrite(counter,"STOP\n");
+  memset(response,0,strsize);
+  gpibread(counter, response);
 
   //process the string
   memcpy(cdata0,cdata,8);        cdata0[8]='\0';
@@ -111,17 +115,24 @@ int main () {
   memcpy(cdata3,cdata+3*skip,8); cdata3[8]='\0';
   data0 = atoi(cdata0); data1 = atoi(cdata1);
   data2 = atoi(cdata2); data3 = atoi(cdata3);
+  //printf("%i  %i  %i  %i\n",data0,data1,data2,data3);
 
-  printf("%i  %i  %i  %i\n",data0,data1,data2,data3);
-  
+  //build the array
+  for (j=0;j<30;j++) {
+   array1[j]=array1[j+1];
+  }
+  array1[29]=data1;
 
-  //stop counter (why?)
-  gpibwrite(counter,"STOP\n");
-  //puts("STOP RESPONSE\n");
-  memset(response,0,strsize);
-  gpibread(counter, response);
+  //plot some stuff
+  fputs("plot '-' w boxes ti 'channel 1'\n", pipe_gp);
+  //fputs("plot '-' w boxes ti 'channel 1', '-' w boxes ti 'channel 2'\n", pipe_gp);
+  for (j=0;j<30;j++) {
+   fprintf(pipe_gp, "%f %f \n", j+0.5 ,array1[j]);
+  }
+  fprintf(pipe_gp, "e\n");
+  fflush(pipe_gp);  
 
- }
+  }
 
 /*
  //
@@ -144,11 +155,8 @@ int main () {
 
 // printf("command %10s '\n", command);
 
+ pclose(pipe_gp);
+
  return 0;
 }
 
-int plot_data () {
- FILE *gp = popen("gnuplot -persist","w");
- fputs("load 'startup.p'\n", gp);
- pclose(gp);
-}
