@@ -10,17 +10,24 @@ int main() {
 //  fputs("set terminal png\n", pipe_gp);
   int i;
   int j;
-  for (j=1; j<=200; j++) {
-  fputs("plot '-'\n", pipe_gp);
+  fputs("load 'startup_2ch.p'\n",pipe_gp);
+  //fputs("set xrange [*:*]\n",pipe_gp);
+  fputs("set yrange [-1:1]\n",pipe_gp);
+  for (j=1; j<=100; j++) {
+  fputs("plot '-' w boxes, '-' w boxes\n", pipe_gp);
 
    for (i=0; i<30; ++i) {
-    double x = (i+j/2.0)/100.0; 
-    xarray[i] = x;
-    yarray[i] = x - (x*x)/2.0 + (x*x*x)/6.0 - (x*x*x*x)/24;
-    fprintf(pipe_gp, "%f %f\n", xarray[i], yarray[i]);
+    double x = (i+4*j)/100.0; 
+    xarray[i] = sin(x);
+    yarray[i] = cos(x);
+    fprintf(pipe_gp, "%f %f\n",i+0.25, yarray[i]);
     }
-
    fputs("e\n", pipe_gp);
+   for(i=0; i<30; i++) {
+    fprintf(pipe_gp,"%f %f\n",i+0.75, xarray[i]);
+   }
+   fputs("e\n", pipe_gp);
+   fflush(pipe_gp);
 
    for (i=0;i<10000000;i++) {}
    }
