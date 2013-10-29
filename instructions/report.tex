@@ -75,7 +75,7 @@ sudo nano /etc/gpib.conf
 \end{verbatim}
 Once within the file, which was placed there as a placeholder by the installation procedure, you must proceed to modify it by changing the \texttt{board type} variable to read \texttt{"ni\_usb\_b"} and, if you are going to work with the Ortec 974 counter, setting up a device to read \texttt{pad = 4}. You may also change the names of the board (from the \texttt{"violet"} default) and the device (perhaps to read \texttt{"counter"}). The rest of the parameters need not be changed as the defaults are good for our board.
 
-This next part requires knowing which kernel version you are running. Either run the command \texttt{uname -a} or look around in the folder \textttt{/lib/modules/} for the largest version number. Write this number down. Now check that there is a folder with address \texttt{/etc/ld.so.conf.d/}. In case there is, continue with the following. Create a new text file as follows
+This next part requires knowing which kernel version you are running. Either run the command \texttt{uname -a} or look around in the folder \texttt{/lib/modules/} for the largest version number. Write this number down. Now check that there is a folder with address \texttt{/etc/ld.so.conf.d/}. In case there is, continue with the following. Create a new text file as follows
 \begin{verbatim}
 gksudo gedit /etc/ld.so.conf.d/gpib.conf
 \end{verbatim}
@@ -125,6 +125,10 @@ takes care of compiling your code and linking to the GPIB library which is now i
 
 Consider placing your compilation line in an executable script which has termination *.sh (to make it executable write \texttt{chmod +x nameofscript.sh}) and \textbf{remember to run your newly compiled code as a super-user by prefixing \texttt{sudo}!}
 
-
+All of the code I've developed, which includes the interesting \texttt{ortec.c}, as well as this instruction manual can be downloaded from my github repository (most conveniently as a zip file) which is located at
+\begin{verbatim}
+https://github.com/danieljg/ortec-gpib
+\end{verbatim}
+Please mind the \texttt{LICENSE} file, as it concerns my copyright.
 
 \end{document}
