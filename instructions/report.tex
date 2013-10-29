@@ -1,0 +1,130 @@
+\documentclass[letterpaper,11pt]{article}
+
+\usepackage[utf8x]{inputenc}
+
+\usepackage{bm}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage{verbatim}
+
+\newcommand{\prob}{P\left(0<x<L/3\right)}
+\newcommand{\qps}{q_{ps}}
+\newcommand{\vf}{v_\phi}
+\newcommand{\vg}{v_g}
+\newcommand{\ei}[1]{e^{i\left(#1\right)}}
+\newcommand{\aq}[1]{\alpha_{#1}\left(q_{#1}\right)}
+\newcommand{\rot}{\nabla\times}
+\newcommand{\sqfrac}[2]{\sqrt{\frac{#1}{#2}}}
+\newcommand{\deriv}[2]{\frac{d #1}{d #2}}
+\newcommand{\dderiv}[2]{\frac{d^2 #1}{d #2^2}}
+\newcommand{\pderiv}[2]{\frac{\partial #1}{\partial #2}}
+\newcommand{\pdderiv}[2]{\frac{\partial^2 #1}{\partial #2^2}}
+
+\begin{document}
+
+\date{\today}
+
+\title{Setting up GPIB-Linux}
+\author{Daniel Jim\'enez\\\emph{Divisi\'on de Fisica Aplicada, CICESE}}
+\maketitle
+
+
+In modern Linux systems, those with kernel versions 2.6 or newer, one can use a National Instruments USB-GPIB-HS interface with very little trouble by using the Linux-GPIB package and following these instructions. For maximum compatibility, you should make sure you are running a Debian-based system like Ubuntu or Linux Mint (only Linux Mint 15 has been tested). Please make sure you have a working internet connection and that your user account has permissions to run the \texttt{sudo} command; if there is only one user account, then this will most likely be the case.
+
+\section{Installation}
+If you are working on a newly installed system, it might be needed to install the compilation tools. In order to do so, you type at the terminal prompt:
+ \begin{verbatim}
+sudo apt-get install build-essential
+ \end{verbatim}
+You will be asked to input your administrative password. This should only take a couple of minutes.
+
+Navigate with a web browser to 
+ \begin{verbatim}
+sourceforge.net/projects/linux-gpib
+ \end{verbatim}
+and proceed to download the latest version of the package (As of writing, 3.2.19) and decompress the contents in an accessible location on the filesystem (most easily done by double clicking on the compressed file icon and using the gui that appears). Consider reading the README file.
+
+Compile the source drivers by passing the following commands to the terminal prompt:
+ \begin{verbatim}
+./configure
+ \end{verbatim}
+ \begin{verbatim}
+make
+ \end{verbatim}
+ \begin{verbatim}
+sudo make install
+ \end{verbatim}
+This last command will probably request your password once again (depending on the time that has elapsed since the keyring was last unlocked). After this has been completed, the device drivers for GPIB devices have been installed and are almost ready to be used; either restart the computer to load the new kernel modules or else type the following command to do it manually:
+ \begin{verbatim}
+sudo modprobe ni_usb_gpib
+ \end{verbatim}
+
+This completes the installation of the device drivers.
+
+\section{Configuration}
+There are many different GPIB boards which can be used with the installed drivers. The system requires specifying which device driver must be loaded by modification of a plain-text configuration file located at \texttt{/etc/gpib.conf}. This file is write-protected for regular users so it must be opened with a suitably enabled text editor. A simple graphical editor which is usually available is  \texttt{gedit}, you may run a super user instance of this program as
+\begin{verbatim}
+gksudo gedit /etc/gpib.conf &
+ \end{verbatim}
+Notice this is  \texttt{gksudo} and not \texttt{sudo}! This is the correct form of the command for graphical programs. The ampersand \texttt{\&} is used to prevent the terminal from being locked while the graphical program runs (and is not strictly necessary).
+
+In case  \texttt{gedit} is not available, an old school terminal editor which is always* available is \texttt{nano}, you may run this as a super user with
+\begin{verbatim}
+sudo nano /etc/gpib.conf
+\end{verbatim}
+Once within the file, which was placed there as a placeholder by the installation procedure, you must proceed to modify it by changing the \texttt{board type} variable to read \texttt{"ni\_usb\_b"} and, if you are going to work with the Ortec 974 counter, setting up a device to read \texttt{pad = 4}. You may also change the names of the board (from the \texttt{"violet"} default) and the device (perhaps to read \texttt{"counter"}). The rest of the parameters need not be changed as the defaults are good for our board.
+
+This next part requires knowing which kernel version you are running. Either run the command \texttt{uname -a} or look around in the folder \textttt{/lib/modules/} for the largest version number. Write this number down. Now check that there is a folder with address \texttt{/etc/ld.so.conf.d/}. In case there is, continue with the following. Create a new text file as follows
+\begin{verbatim}
+gksudo gedit /etc/ld.so.conf.d/gpib.conf
+\end{verbatim}
+and add the following line to it
+\begin{verbatim}
+/lib/modules/3.8.0-25-generic/gpib
+\end{verbatim}
+Where the version number (here 3.8.0-25) corresponds to that which you wrote down. In case there isn't, then just add this last line to \texttt{/etc/ld.so.conf}.
+
+This completes the configuration process.
+
+\section{Runtime}
+The contents of the configuration file which we have modified are put into effect by running the command
+\begin{verbatim}
+sudo gpib_config
+\end{verbatim}
+from anywhere on the fiesystem. This requires the NI USB-GPIB-HS interface to be plugged into the usb socket and (possibly) into the GPIB device which is to be controlled. \textbf{This command needs to be run every time the computer is rebooted before you can access the GPIB bus!}.
+
+After the configuration file has been properly loaded, we can launch any of our GPIB-enabled programs by prefixing the command \texttt{sudo} to it. If you are to use a particular program (such as my own \texttt{ortec\_2ch} or any other), then you must navigate to the containing folder from the terminal environment (use the \texttt{cd} command to change the working directory) and finally run the program as
+\begin{verbatim}
+sudo ./ortec_2ch
+\end{verbatim}
+Where the \texttt{./} part of the command indicates the program is located in the current directory (otherwise, the terminal will look for a program in the location(s) where the system-installed programs reside).
+
+\section{Ortec 974 test procedure}
+Once the configuration file is loaded, you can test the bus by using the provided utility \texttt{ibtest}. Since this is an installed program, you can run it from any location in the filesystem by issuing the following command
+\begin{verbatim}
+sudo ibtest
+\end{verbatim}
+This requires the NIM bin to be turned on, as well as the NI USB-GPIB-HS board to be plugged into the computer.
+
+While running this program, we can choose to open the Ortec counter by choosing to open a device (type \texttt{d}, then press \texttt{enter}) and then choosing the primary address as 4 (type \texttt{4}, then press \texttt{enter}). Now we may choose to read a data string from the device (choose \texttt{r} and the default number of bytes, the startup string \texttt{\%001000070} should appear on the screen).
+
+Press the \texttt{N} and/or \texttt{M} button a few times on the face of the Ortec counter so the bottom panel now reads a number different from \text{00} in the right hand side. Choose to write a string (option \texttt{w}) and type \texttt{INIT}, then press \texttt{enter}. The panel on the Ortec counter should now read \text{00} as it does after startup.
+
+If you read another data string from the counter, you should get one of the OK signals. Specifically, I received \texttt{\%000000069}.
+
+This completes the read-write Ortec 974 test procedure.
+
+\section{Compiling}
+
+Once you've successfully done the previous steps, you're likely to want to compile some of your own code. In order to do this, I'll assume you have a C source file named \texttt{ortec.c} in the current working directory. Issuing the command
+\begin{verbatim}
+gcc ortec.c -o ortec -lgpib
+\end{verbatim}
+takes care of compiling your code and linking to the GPIB library which is now installed on your system.
+
+Consider placing your compilation line in an executable script which has termination *.sh (to make it executable write \texttt{chmod +x nameofscript.sh}) and \textbf{remember to run your newly compiled code as a super-user by prefixing \texttt{sudo}!}
+
+
+
+\end{document}
