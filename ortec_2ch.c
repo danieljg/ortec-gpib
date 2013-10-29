@@ -12,7 +12,7 @@
 #include "gpib/ib.h"
 #define strsize    40
 #define skip       9
-#define max_counts 60//0
+#define max_counts 15//0
 
 /* function declarations */
 // write a string to the counter
@@ -23,7 +23,7 @@ void gpibwrite(int identifier, char command[strsize]) {
 void gpibread( int identifier, char *response) {
  memset(response,0,strsize);
  ibrd(identifier, response, strsize-1);
-// printf("%s\n",response);
+ //printf("%s\n",response);
 }
 
 /* main program block */
@@ -51,7 +51,7 @@ int main () {
  for(j=0;j<30;j++){
   array1[j]=0.0;
   array2[j]=0.0;
- }
+  }
 
  //make gnuplot pipe and load the startup script
  FILE *pipe_gp = popen("gnuplot -persist","w");
@@ -110,16 +110,19 @@ int main () {
   array1[29]=data1;
   array2[29]=data2;
   //plot some stuff
-  fputs("plot '-' w boxes ti 'channel 1', '-' w boxes ti 'channel 2'\n", pipe_gp);
-  for (j=0;j<30;j++) {   fprintf(pipe_gp, "%f %f\n", j+0.25 ,array1[j]);  }
+  fputs("plot '-' w boxes ti 'channel 1' axes x1y1, '-' w boxes ti 'channel 2' axes x1y2\n", pipe_gp);
+  for (j=0;j<30;j++) {
+   fprintf(pipe_gp, "%f %f\n", j+0.25 ,array1[j]);
+  }
   fprintf(pipe_gp, "e\n");
-  for (j=0;j<30;j++) {   fprintf(pipe_gp, "%f %f\n", j+0.75, array2[j]);  }
+  for (j=0;j<30;j++) {
+   fprintf(pipe_gp, "%f %f\n", j+0.75, array2[j]);
+  }
+  fprintf(pipe_gp, "e\n");
   //remember to flush!
   fflush(pipe_gp);  
-  }
-
+ }
+ //close the pipe
  pclose(pipe_gp);
-
  return 0;
 }
-

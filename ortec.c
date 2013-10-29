@@ -21,8 +21,9 @@ void gpibwrite(int identifier, char command[strsize]) {
 }
 // read a string from the counter
 void gpibread( int identifier, char *response) {
+ memset(response,0,strsize);
  ibrd(identifier, response, strsize-1);
-// printf("%s\n",response);
+ //printf("%s\n",response);
 }
 
 /* main program block */
@@ -45,6 +46,7 @@ int main () {
  const int send_eoi = 1;
  const int eos_mode = 0;
  const int timeout = T1s;
+ //initialize array
  for(j=0;j<30;j++){
   array1[j]=0.0;
  }
@@ -56,58 +58,41 @@ int main () {
  //find the ortec counter
  counter =  ibdev(minor, pad, sad, timeout, send_eoi, eos_mode);
  //read startup string
- //puts("STARTUP\n");
  gpibread(counter, response);
-
  //initialize device
  gpibwrite(counter,"INIT\n");
  //read ok string
- memset(response,0,strsize);
  gpibread(counter, response);
- memset(response,0,strsize);
  gpibread(counter, response);
-
  // set to computer mode
  gpibwrite(counter,"COMPUTER\n");
  //read ok string
- memset(response,0,strsize);
  gpibread(counter, response);
  //set to remote control
  gpibwrite(counter,"ENABLE_REMOTE\n");
- memset(response,0,strsize);
  gpibread(counter, response);
  //auto-transmit counter data at end of scan
  gpibwrite(counter,"ENABLE_ALARM\n");
- memset(response,0,strsize);
  gpibread(counter, response);
  //display channel 2
  gpibwrite(counter,"SET_DISP 2\n");
- memset(response,0,strsize);
  gpibread(counter, response);
  //set the counter for a second
  gpibwrite(counter,"SET_COU_PR 1,1\n");
- memset(response,0,strsize);
  gpibread(counter, response);
 
+ //counting loop
  for(count_idx=1 ; count_idx <= max_counts ; count_idx++) {
-
   //clear counters
   gpibwrite(counter,"CL_COU\n");
-  memset(response,0,strsize);
   gpibread(counter, response);
-
   //start the count
   gpibwrite(counter,"START\n");
-  memset(response,0,strsize);
   gpibread(counter, response);
-  memset(response,0,strsize);
   gpibread(counter, cdata);
-
   //stop counter (why?)
   gpibwrite(counter,"STOP\n");
-  memset(response,0,strsize);
   gpibread(counter, response);
-
   //process the string
   memcpy(cdata0,cdata,8);        cdata0[8]='\0';
   memcpy(cdata1,cdata+skip,8);   cdata1[8]='\0';
@@ -115,28 +100,21 @@ int main () {
   memcpy(cdata3,cdata+3*skip,8); cdata3[8]='\0';
   data0 = atoi(cdata0); data1 = atoi(cdata1);
   data2 = atoi(cdata2); data3 = atoi(cdata3);
-  //printf("%i  %i  %i  %i\n",data0,data1,data2,data3);
-
   //build the array
   for (j=0;j<30;j++) {
    array1[j]=array1[j+1];
   }
   array1[29]=data1;
-
   //plot some stuff
   fputs("plot '-' w boxes ti 'channel 1'\n", pipe_gp);
-  //fputs("plot '-' w boxes ti 'channel 1', '-' w boxes ti 'channel 2'\n", pipe_gp);
   for (j=0;j<30;j++) {
    fprintf(pipe_gp, "%f %f \n", j+0.5 ,array1[j]);
   }
   fprintf(pipe_gp, "e\n");
+  //remember to flush!
   fflush(pipe_gp);  
-
-  }
-
-
+ }
+ //close the pipe
  pclose(pipe_gp);
-
  return 0;
 }
-
