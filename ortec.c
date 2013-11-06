@@ -12,7 +12,7 @@
 #include "gpib/ib.h"
 #define strsize    40
 #define skip       9
-#define max_counts 60//0
+#define max_counts 600
 
 /* function declarations */
 // write a string to the counter
@@ -112,7 +112,7 @@ int main () {
   }
   fprintf(pipe_gp, "e\n");
   //remember to flush!
-  fflush(pipe_gp);  
+  fflush(pipe_gp);
  }
  //close the pipe
  pclose(pipe_gp);

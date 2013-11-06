@@ -12,7 +12,7 @@
 #include "gpib/ib.h"
 #define strsize    40
 #define skip       9
-#define max_counts 15//0
+#define max_counts 300
 
 /* function declarations */
 // write a string to the counter

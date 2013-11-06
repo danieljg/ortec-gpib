@@ -1,6 +1,12 @@
 set term wxt size 1280,800 font ",16"
 set title 'Two-channel test'
 set xlabel 'time [s]'
+set mytics
+set my2tics
+set ytics out
+set y2tics out
+set xtics out
+set x2tics out
 #set ylabel 'counts'
 set xtics font ",18"
 set ytics font ",18"
