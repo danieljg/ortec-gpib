@@ -6,6 +6,8 @@
 #include <stdint.h>
 #include <string.h>
 #include <getopt.h>
+#include <ncurses.h>
+#include <gpib/ib_b.h>
 
 #define strsize 1024
 #define skip    9
@@ -16,6 +18,15 @@ strcpy(thearray,string);
 printf("%s\n",thearray);
 }
 
+
+int keywaiting(int *key) {
+  int ch;
+  ch = getch();
+  if ((ch != ERR) && key) *key = ch;
+  return (ch != ERR);
+}
+
+
 int main() {
 char s[strsize]="00000010;00001000;00000000;00000000;";
 char s0[9];
@@ -23,6 +34,7 @@ char s1[9];
 char s2[9];
 char s3[9];
 int i;
+puts("v0.1");
 for (i=1; i<=1 ; i++){
 memcpy(s0,s,8);
 s0[8]='\0';
@@ -56,5 +68,38 @@ printf("%s\n",ptrtoarray);
 printf("%s\n",array);
 printf("%s\n",s);
 */
+
+
+  //initialize ncurses
+  initscr();
+  nodelay(stdscr, TRUE);
+  noecho();
+  keypad(stdscr, TRUE);
+  curs_set(0);
+
+  int ch;
+  for(;;) {
+   if (keywaiting(&ch)) break;
+  }
+
+
+  //done with ncurses
+  clear();
+  refresh();
+  endwin();
+
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
 

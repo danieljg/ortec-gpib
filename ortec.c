@@ -9,10 +9,11 @@
 #include <stdint.h>
 #include <string.h>
 #include <getopt.h>
-#include "gpib/ib.h"
+#include <ncurses.h>
+#include <gpib/ib_b.h>
 #define strsize    40
 #define skip       9
-#define max_counts 600
+#define max_counts 1800
 
 /* function declarations */
 // write a string to the counter
@@ -25,10 +26,17 @@ void gpibread( int identifier, char *response) {
  ibrd(identifier, response, strsize-1);
  //printf("%s\n",response);
 }
+// wait for keypress
+int keywaiting(int *key) {
+  int ch;
+  ch = getch();
+  if ((ch != ERR) && key) *key = ch;
+  return (ch != ERR);
+}
 
 /* main program block */
 int main () {
- puts("v0.0.0.1\n");
+ puts("v0.1\n");
  //define some variables and constants
  char command[strsize];
  char response[strsize];
@@ -36,10 +44,9 @@ int main () {
  char cdata0[skip]; char cdata1[skip];
  char cdata2[skip]; char cdata3[skip];
  int data0; int data1; int data2; int data3;
- int count_idx;
- int counter;
- int j;
+ int count_idx; int counter; int j; int ch;
  double array1[30];
+ double average;
  const int minor = 0;
  const int pad   = 4;//configurable on the 974 by switches
  const int sad   = 0;
@@ -50,9 +57,15 @@ int main () {
  for(j=0;j<30;j++){
   array1[j]=0.0;
  }
+ //initialize ncurses
+ initscr();
+ nodelay(stdscr, TRUE);
+ noecho();
+ keypad(stdscr, TRUE);
+ curs_set(0);
 
  //make gnuplot pipe and load the startup script
- FILE *pipe_gp = popen("gnuplot -persist","w");
+ FILE *pipe_gp = popen("gnuplot -noraise","w");
  fputs("load 'startup.p'\n", pipe_gp);
 
  //find the ortec counter
@@ -105,7 +118,14 @@ int main () {
    array1[j]=array1[j+1];
   }
   array1[29]=data1;
+  //calculate the average
+  average=0.0;
+  for (j=0;j<10;j++) {
+   average = average+array1[29-j];
+  }
+  average=average/10.0;
   //plot some stuff
+  fprintf(pipe_gp,"set title \'Ortec test, last = %d, 10-average=%f\'\n",data1,average);
   fputs("plot '-' w boxes ti 'channel 1'\n", pipe_gp);
   for (j=0;j<30;j++) {
    fprintf(pipe_gp, "%f %f \n", j+0.5 ,array1[j]);
@@ -113,8 +133,15 @@ int main () {
   fprintf(pipe_gp, "e\n");
   //remember to flush!
   fflush(pipe_gp);
+  //if theres a keypress, gotta press the killswitch
+  if (keywaiting(&ch)) break;
  }
  //close the pipe
  pclose(pipe_gp);
+ //done with ncurses
+ clear();
+ refresh();
+ endwin();
+ //end of code
  return 0;
 }

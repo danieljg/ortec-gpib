@@ -1,5 +1,4 @@
-set term wxt size 1280,800 font ",16"
-set title 'Two-channel test'
+set term wxt noraise nopersist size 1280,800 font ",16"
 set xlabel 'time [s]'
 set mytics
 set my2tics
