@@ -45,17 +45,17 @@ int main () {
  char cdata2[skip]; char cdata3[skip];
  int data0; int data1; int data2; int data3;
  int count_idx; int counter; int j; int ch;
- double array1[30];
- double average;
+ double array1[30]; double array2[30]; double array3[30];
+ double average1;   double average2; double average3;
  const int minor = 0;
  const int pad   = 4;//configurable on the 974 by switches
  const int sad   = 0;
  const int send_eoi = 1;
  const int eos_mode = 0;
  const int timeout = T1s;
- //initialize array
+ //initialize arrays
  for(j=0;j<30;j++){
-  array1[j]=0.0;
+  array1[j]=0.0;  array2[j]=0.0; array3[j];
  }
  //initialize ncurses
  initscr();
@@ -66,7 +66,7 @@ int main () {
 
  //make gnuplot pipe and load the startup script
  FILE *pipe_gp = popen("gnuplot -noraise","w");
- fputs("load 'startup.p'\n", pipe_gp);
+ fputs("load 'startup_coinc.p'\n", pipe_gp);
 
  //find the ortec counter
  counter =  ibdev(minor, pad, sad, timeout, send_eoi, eos_mode);
@@ -87,13 +87,13 @@ int main () {
  //auto-transmit counter data at end of scan
  gpibwrite(counter,"ENABLE_ALARM\n");
  gpibread(counter, response);
- //display channel 2
- gpibwrite(counter,"SET_DISP 2\n");
+ //display channel 4
+ gpibwrite(counter,"SET_DISP 4\n");
  gpibread(counter, response);
  //set the counter for a second
- //gpibwrite(counter,"SET_COU_PR 1,1\n");
+ gpibwrite(counter,"SET_COU_PR 1,1\n");
  //let's try a fifth of a second
- gpibwrite(counter,"SET_COU_PR 2,0\n"); 
+ //gpibwrite(counter,"SET_COU_PR 2,0\n"); 
  gpibread(counter, response);
 
  //counting loop
@@ -117,20 +117,20 @@ int main () {
   data2 = atoi(cdata2); data3 = atoi(cdata3);
   //build the array
   for (j=0;j<30;j++) {
-   array1[j]=array1[j+1];
+   array1[j]=array1[j+1]; array2[j]=array2[j+1]; array3[j]=array3[j+1];
   }
-  array1[29]=data1;
+  array1[29]=data1; array2[29]=data2; array3[29]=data3;
   //calculate the average
-  average=0.0;
+  average1=0.0; average2=0.0; average3=0.0;
   for (j=0;j<10;j++) {
-   average = average+array1[29-j];
+   average1 = average1+array1[29-j]; average2 = average2+array2[29-j]; average3 = average3+array3[29-j];
   }
-  average=average/10.0;
+  average1=average1/10.0; average2=average2/10.0; average3=average3/10.0;
   //plot some stuff
-  fprintf(pipe_gp,"set title \'Ortec test, last = %d, 10-average=%f\'\n",data1,average);
+  fprintf(pipe_gp,"set title \'Coincidences, last = %d, 10-average=%f\'\n",data3,average3);
   fputs("plot '-' w boxes ti 'channel 1'\n", pipe_gp);
   for (j=0;j<30;j++) {
-   fprintf(pipe_gp, "%f %f \n", j+0.5 ,array1[j]);
+   fprintf(pipe_gp, "%f %f \n", j+0.5 ,array3[j]);
   }
   fprintf(pipe_gp, "e\n");
   //remember to flush!
