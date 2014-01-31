@@ -12,7 +12,7 @@
 #include <gpib/ib.h>
 #define strsize    40
 #define skip       9
-#define counts_av  10
+#define counts_av  1
 
 /* function declarations */
 // read a string from the counter
@@ -30,7 +30,7 @@ void gpibwrite(int identifier, char command[strsize]) {
 
 /* main program block */
 int main () {
- puts("measuring help tool v0.0.1\n");
+ puts("temperature dependence measurement helper v0.1\n");
  //define some variables and constants
  FILE *fileptr;
  char buff[32];
@@ -43,7 +43,7 @@ int main () {
  int ch_x=120; int ch_o=111;
  double array1[30]; double array2[30]; double array3[30];
  double average1; double average2; double average3;
- double tempset; double tempactual;
+ double tempset; double tempactual; double deltat;
  const int minor = 0;
  const int pad   = 4;//configurable on the 974 by switches
  const int sad   = 0;
@@ -71,17 +71,26 @@ int main () {
  //friendly hello
  puts("Looks like we'll be measuring some data.");
  //set output file
- puts("Output goes to out.dat");
- fileptr = fopen("out.dat","a");
+ puts("Output will be appended to temp.dat");
+ fileptr = fopen("temp.dat","a");
  fprintf(fileptr,"#Temp(set) Temp(actual) Photons/sec\n");
- puts("Now I'll require some data feeding.");
+ puts("Now I'll require some data feeding to aid in data collection.");
+ puts("How many points per degree celcius will you measure? [press x to quit]");
+ fgets(buff,32,stdin); if (buff[0]=='x') {fclose(fileptr); return 0;} deltat=atof(buff);
+ deltat=1.0/deltat;  //conversion to celcius increment
+ printf("deltat = %f",deltat);
+ puts("What is the starting temperature (set)? [press x to quit]");
+ fgets(buff,32,stdin); if(buff[0]=='x') {fclose(fileptr); return 0;} tempset=atof(buff);
+ puts("What is the actual temperature? [ press x to quit]");
+ fgets(buff,32,stdin); if(buff[0]=='x') {fclose(fileptr); return 0;} tempactual=atof(buff);
  //one-infinite-loop
+ puts("Ready to measure, press enter to begin [press x to quit]");
+ fgets(buff,32,stdin); if(buff[0]=='x') {fclose(fileptr); return 0;}
  for(;;) {
- puts("Temp (set) [press x to quit]");
- fgets(buff,32,stdin); if(buff[0]=='x') break; tempset=atof(buff);
- puts("Temp (actual) [press x to quit]");
- fgets(buff,32,stdin); if(buff[0]=='x') break; tempactual=atof(buff);
- average=0.0;
+ //inform the user
+ puts("Measuring... please wait for results");
+ //reset averages
+ average1=0.0; average2=0.0; average3=0.0;
   //counting loop
   for(count_idx=1 ; count_idx <= counts_av ; count_idx++) {
   //clear counters
@@ -105,7 +114,17 @@ int main () {
  average1=average1/counts_av; average2=average2/counts_av; average3=average3/counts_av;
  //write output
  fprintf(fileptr,"%f\t%f\t%f\t%f\t\%f\n",tempset,tempactual,average1,average2,average3);
- //fprintf(fileptr,"%f\t%f\n",tempset,tempactual);
+ printf("%f\t%f\t%f\t%f\t\%f\n",tempset,tempactual,average1,average2,average3);
+ //remember to flush!
+ fflush(fileptr);
+ //calculate new set temperature
+ tempset=tempset+deltat;
+ //request temperature adjustment and inform user to wait
+ printf("Please set the temperature to %f\n",tempset);
+ puts("Wait for the actual temperature to stabilize...");
+ //read new actual temperature
+ puts("Please feed the new actual temperature [press x to quit]");
+ fgets(buff,32,stdin); if(buff[0]=='x') break; tempactual=atof(buff);
  }
  fclose(fileptr);
  //end of code

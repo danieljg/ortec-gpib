@@ -127,8 +127,8 @@ int main () {
   }
   average1=average1/10.0; average2=average2/10.0; average3=average3/10.0;
   //plot some stuff
-  fprintf(pipe_gp,"set title \'Coincidences, last = %d, 10-average=%f\'\n",data3,average3);
-  fputs("plot '-' w boxes ti 'channel 1'\n", pipe_gp);
+  fprintf(pipe_gp,"set title \'Ch1 av = %f, Ch2 av = %f, Ch3 last = %d - av=%f\'\n",average1,average2,data3,average3);
+  fputs("plot '-' w boxes ti 'coincidences'\n", pipe_gp);
   for (j=0;j<30;j++) {
    fprintf(pipe_gp, "%f %f \n", j+0.5 ,array3[j]);
   }

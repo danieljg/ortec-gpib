@@ -9,7 +9,7 @@ set ytics out
 #set key font ",16"
 #set title font ",16"
 set xrange [0:30]
-set yrange [0:100<*]
+set yrange [0:10<*]
 set linetype 1 lc rgb "dark-red" lw 5
 set linetype 2 lc rgb "dark-green" lw 5
 set style fill solid 0.5
