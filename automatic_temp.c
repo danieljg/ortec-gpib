@@ -37,8 +37,8 @@ int main () {
  char cdata[strsize];
  char cdata0[skip]; char cdata1[skip];
  char cdata2[skip]; char cdata3[skip];
- int counts_av;
  int data0; int data1; int data2; int data3;
+ int counts_av;
  int count_idx; int counter; int j;
  int ch_x=120; int ch_o=111;
  double array1[30]; double array2[30]; double array3[30];
@@ -74,17 +74,22 @@ int main () {
  puts("Output will be appended to temp.dat");
  fileptr = fopen("temp.dat","a");
  fprintf(fileptr,"#Temp(set) Temp(actual) Photons/sec\n");
+
  puts("Now I'll require some data feeding to aid in data collection.");
  puts("How many seconds will you average per data point? [press x to quit]");
  fgets(buff,32,stdin); if (buff[0]=='x') {fclose(fileptr); return 0;} counts_av=atof(buff);
+
  puts("How many points per degree celcius will you measure? [press x to quit]");
  fgets(buff,32,stdin); if (buff[0]=='x') {fclose(fileptr); return 0;} deltat=atof(buff);
  deltat=1.0/deltat;  //conversion to celcius increment
- printf("deltat = %f\n",deltat);
+ printf("deltat = %.2f\n",deltat);
+
  puts("What is the starting temperature (set)? [press x to quit]");
  fgets(buff,32,stdin); if(buff[0]=='x') {fclose(fileptr); return 0;} tempset=atof(buff);
+
  puts("What is the actual temperature? [ press x to quit]");
  fgets(buff,32,stdin); if(buff[0]=='x') {fclose(fileptr); return 0;} tempactual=atof(buff);
+
  //one-infinite-loop
  puts("Ready to measure, press enter to begin [press x to quit]");
  fgets(buff,32,stdin); if(buff[0]=='x') {fclose(fileptr); return 0;}
@@ -115,8 +120,8 @@ int main () {
  //compute average
  average1=average1/counts_av; average2=average2/counts_av; average3=average3/counts_av;
  //write output
- fprintf(fileptr,"%f\t%f\t%f\t%f\t\%f\n",tempset,tempactual,average1,average2,average3);
- printf("%f\t%f\t%f\t%f\t\%f\n",tempset,tempactual,average1,average2,average3);
+ fprintf(fileptr,"%.1f\t%.1f\t%f\t%f\t\%f\n",tempset,tempactual,average1,average2,average3);
+ printf("%.1f\t%.1f\t%f\t%f\t\%f\n",tempset,tempactual,average1,average2,average3);
  //remember to flush!
  fflush(fileptr);
  //calculate new set temperature
@@ -126,7 +131,22 @@ int main () {
  puts("Wait for the actual temperature to stabilize...");
  //read new actual temperature
  puts("Please feed the new actual temperature [press x to quit]");
- fgets(buff,32,stdin); if(buff[0]=='x') break; tempactual=atof(buff);
+ puts("no input -> tempactual+deltat -- z -> same temperature");
+ printf(" q- %.1f w- %.1f e- %.1f r- %.1f t- %.1f \n a- %.1f s- %.1f d- %.1f f- %.1f g- %.1f \n",tempactual+0.6,tempactual+0.7,tempactual+0.8,tempactual+0.9,tempactual+1.0,tempactual+0.1,tempactual+0.2,tempactual+0.3,tempactual+0.4,tempactual+0.5);
+ fgets(buff,32,stdin); if(buff[0]=='x') break;
+ if(buff[0]=='a') tempactual=tempactual+0.1;
+ else if(buff[0]=='s') tempactual=tempactual+0.2;
+ else if(buff[0]=='d') tempactual=tempactual+0.3;
+ else if(buff[0]=='f') tempactual=tempactual+0.4;
+ else if(buff[0]=='g') tempactual=tempactual+0.5;
+ else if(buff[0]=='q') tempactual=tempactual+0.6;
+ else if(buff[0]=='w') tempactual=tempactual+0.7;
+ else if(buff[0]=='e') tempactual=tempactual+0.8;
+ else if(buff[0]=='r') tempactual=tempactual+0.9;
+ else if(buff[0]=='t') tempactual=tempactual+1.0;
+ else if(buff[0]=='z') tempactual=tempactual;
+ else if(buff[0]=='\n') tempactual=tempactual+deltat;
+ else tempactual=atof(buff);
  }
  fclose(fileptr);
  //end of code

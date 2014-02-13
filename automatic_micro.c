@@ -9,7 +9,8 @@
 #include <stdint.h>
 #include <string.h>
 #include <getopt.h>
-#include <gpib/ib.h>
+#include <ncurses.h>
+#include <gpib/ib_b.h>
 #define strsize    40
 #define skip       9
 
@@ -27,9 +28,17 @@ void gpibwrite(int identifier, char command[strsize]) {
  gpibread(identifier, response);
 }
 
+// wait for keypress
+int keywaiting(int *key) {
+  int ch;
+  ch = getch();
+  if ((ch != ERR) && key) *key = ch;
+  return (ch != ERR);
+}
+
 /* main program block */
 int main () {
- puts("temperature dependence measurement helper v0.1\n");
+ puts("micrometer measurement help tool v0.1\n");
  //define some variables and constants
  FILE *fileptr;
  char buff[32];
@@ -37,19 +46,25 @@ int main () {
  char cdata[strsize];
  char cdata0[skip]; char cdata1[skip];
  char cdata2[skip]; char cdata3[skip];
- int counts_av;
  int data0; int data1; int data2; int data3;
+ int counts_av; int wait_time; int ch;
  int count_idx; int counter; int j;
  int ch_x=120; int ch_o=111;
  double array1[30]; double array2[30]; double array3[30];
  double average1; double average2; double average3;
- double tempset; double tempactual; double deltat;
+ double tempset; double tempactual; double deltax; double xpos=0;
  const int minor = 0;
  const int pad   = 4;//configurable on the 974 by switches
  const int sad   = 0;
  const int send_eoi = 1;
  const int eos_mode = 0;
  const int timeout = T1s;
+ //initialize ncurses
+ initscr();
+ nodelay(stdscr, TRUE);
+ noecho();
+ keypad(stdscr, TRUE);
+ curs_set(0);
  //find the ortec counter
  counter =  ibdev(minor, pad, sad, timeout, send_eoi, eos_mode);
  //read startup string
@@ -70,27 +85,41 @@ int main () {
  gpibwrite(counter,"SET_COU_PR 1,1\n");
  //friendly hello
  puts("Looks like we'll be measuring some data.");
+
  //set output file
- puts("Output will be appended to temp.dat");
- fileptr = fopen("temp.dat","a");
- fprintf(fileptr,"#Temp(set) Temp(actual) Photons/sec\n");
+ puts("Output goes to micro.dat");
+ fileptr = fopen("micro.dat","a");
+
+ //inform the user, read working temperature and write to header
  puts("Now I'll require some data feeding to aid in data collection.");
+ puts("Please feed me the temperature (set)    [press x to quit]");
+ fgets(buff,32,stdin); if(buff[0]=='x') {fclose(fileptr); return 0;} tempset=atof(buff);
+ puts("Please feed me the temperature (actual) [press x to quit]");
+ fgets(buff,32,stdin); if(buff[0]=='x') {fclose(fileptr); return 0;} tempactual=atof(buff);
+ fprintf(fileptr,"#Temp(set) %.2f\t Temp(actual) %.2f\t Photons/sec\n",tempset,tempactual);
+
+ //read number of seconds to average
  puts("How many seconds will you average per data point? [press x to quit]");
  fgets(buff,32,stdin); if (buff[0]=='x') {fclose(fileptr); return 0;} counts_av=atof(buff);
- puts("How many points per degree celcius will you measure? [press x to quit]");
- fgets(buff,32,stdin); if (buff[0]=='x') {fclose(fileptr); return 0;} deltat=atof(buff);
- deltat=1.0/deltat;  //conversion to celcius increment
- printf("deltat = %f\n",deltat);
- puts("What is the starting temperature (set)? [press x to quit]");
- fgets(buff,32,stdin); if(buff[0]=='x') {fclose(fileptr); return 0;} tempset=atof(buff);
- puts("What is the actual temperature? [ press x to quit]");
- fgets(buff,32,stdin); if(buff[0]=='x') {fclose(fileptr); return 0;} tempactual=atof(buff);
+
+ //set time delay within data points
+ puts("How many seconds will you wait between consecutive measurements? [press x to quit]");
+ fgets(buff,32,stdin); if (buff[0]=='x') {fclose(fileptr); return 0;} wait_time=atof(buff);
+
+ //get the number of points per turn and calculate deltax
+ puts("How many data points per millimeter? [press x to quit]");
+ fgets(buff,32,stdin); if(buff[0]=='x') {fclose(fileptr); return 0;} deltax=atof(buff);
+ deltax=1000.0/deltax; //conversion to um
+
+ // finish writing the header
+ fprintf(fileptr,"#position(um)\t singles-1 \t singles-2 \t coincidences (10s average)\n");
+
  //one-infinite-loop
  puts("Ready to measure, press enter to begin [press x to quit]");
  fgets(buff,32,stdin); if(buff[0]=='x') {fclose(fileptr); return 0;}
  for(;;) {
  //inform the user
- puts("Measuring... please wait for results");
+ puts("Measuring... please wait for the beep before moving");
  //reset averages
  average1=0.0; average2=0.0; average3=0.0;
   //counting loop
@@ -115,18 +144,19 @@ int main () {
  //compute average
  average1=average1/counts_av; average2=average2/counts_av; average3=average3/counts_av;
  //write output
- fprintf(fileptr,"%f\t%f\t%f\t%f\t\%f\n",tempset,tempactual,average1,average2,average3);
- printf("%f\t%f\t%f\t%f\t\%f\n",tempset,tempactual,average1,average2,average3);
+ fprintf(fileptr,"%f\t%f\t%f\t%f\n",xpos,average1,average2,average3);
+ printf("%f\t%f\t%f\t%f\n",xpos,average1,average2,average3);
  //remember to flush!
  fflush(fileptr);
- //calculate new set temperature
- tempset=tempset+deltat;
- //request temperature adjustment and inform user to wait
- printf("Please set the temperature to %f\n",tempset);
- puts("Wait for the actual temperature to stabilize...");
- //read new actual temperature
- puts("Please feed the new actual temperature [press x to quit]");
- fgets(buff,32,stdin); if(buff[0]=='x') break; tempactual=atof(buff);
+ //advance the position
+ xpos=xpos+deltax;
+ //if theres a keypress, gotta press the killswitch
+ if (keywaiting(&ch)) break;
+ //require adjustment and play sound
+ puts("Adjust the position of the fiber now, please and wait for the beep [press any key to quit]");
+ system("play -n synth 0.1 sine 400-4000");
+ //sleep for some time
+ sleep(wait_time);
  }
  fclose(fileptr);
  //end of code
