@@ -1,6 +1,6 @@
 //Program to setup and control the Ortec 974 counter
 //while plotting the results in real time
-//Daniel Jimenez 23-Oct-2013
+//Daniel Jimenez November/December-2013
 #include <stdlib.h>
 #include <stdio.h>
 #include <ctype.h>
