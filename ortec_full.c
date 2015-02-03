@@ -41,7 +41,7 @@ int keywaiting(int *key) {
 int main () {
  puts("v0.2\n");
  //define some variables and constants
- char command[strsize]; char buff[32];
+ char command[strsize]; char buff[32]; char buff2[32];
  char response[strsize];
  char cdata[strsize]; char bdata[strsize];
  char cdata0[skip]; char cdata1[skip]; char bdata0[skip]; char bdata1[skip];
@@ -65,6 +65,10 @@ int main () {
  puts("Looks like we'll be measuring some data. Please choose."); puts("1   second   -- press 'enter'");
  puts("0.2 seconds  -- press 'a' then 'enter'"); puts("[press x to quit]");
  fgets(buff,32,stdin); if(buff[0]=='x')  return 0;
+ //choose singles or accidentals
+ puts("Do you want to monitor the singles or the pairs?"); puts("singles -- press 'enter'");
+ puts("pairs -- press 'a' then 'enter'"); puts("[press x to quit]");
+ fgets(buff2,32,stdin); if(buff2[0]=='x') return 0;
  //make gnuplot pipe and load the startup script
  FILE *pipe_gp = popen("gnuplot -noraise","w");
  fputs("load 'startup_2ch.p'\n", pipe_gp);
@@ -131,16 +135,28 @@ int main () {
   }
   average1=average1/10.0; average2=average2/10.0; average3=average3/10.0; averageb=averageb/10.0;
   //plot some stuff
-  fprintf(pipe_gp,"set title \"Ch1=%d (av=%0.1f), Ch2=%d (av=%0.1f), Ch3=%d (av=%0.1f)\\n pairs-accs=%d (av=%0.1f), accs=%d (av=%0.1f)\"\n",data1,average1,data2,average2,data3,average3,data3-datab,average3-averageb,datab,averageb);
+  fprintf(pipe_gp,"set title \"idx=%d Ch1=%d (av=%0.1f), Ch2=%d (av=%0.1f), Ch3=%d (av=%0.1f)\\n pairs-accs=%d (av=%0.1f), accs=%d (av=%0.1f)\"\n",count_idx,data1,average1,data2,average2,data3,average3,data3-datab,average3-averageb,datab,averageb);
   fputs("plot '-' w boxes ti 'channel 1' axes x1y1, '-' w boxes ti 'channel 2' axes x1y2\n", pipe_gp);
-  for (j=0;j<30;j++) {
-   fprintf(pipe_gp, "%f %f\n", j+0.25 ,array1[j]);
+  if(buff2[0]=='a') {
+   for (j=0;j<30;j++) {
+    fprintf(pipe_gp, "%f %f\n", j+0.25 ,array3[j]-arrayb[j]);
+   }
+   fprintf(pipe_gp, "e\n");
+   for (j=0;j<30;j++) {
+    fprintf(pipe_gp, "%f %f\n", j+0.75, arrayb[j]);
+   }
+   fprintf(pipe_gp, "e\n");
   }
-  fprintf(pipe_gp, "e\n");
-  for (j=0;j<30;j++) {
-   fprintf(pipe_gp, "%f %f\n", j+0.75, array2[j]);
+  else {
+   for (j=0;j<30;j++) {
+    fprintf(pipe_gp, "%f %f\n", j+0.25 ,array1[j]);
+   }
+   fprintf(pipe_gp, "e\n");
+   for (j=0;j<30;j++) {
+    fprintf(pipe_gp, "%f %f\n", j+0.75, array2[j]);
+   }
+   fprintf(pipe_gp, "e\n");
   }
-  fprintf(pipe_gp, "e\n");
   //remember to flush!
   fflush(pipe_gp);
   //if theres a keypress, gotta press the killswitch

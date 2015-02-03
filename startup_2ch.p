@@ -15,7 +15,7 @@ set key font ",16"
 set title font ",16"
 set xrange  [0:30]
 set yrange  [0:100<*]
-set y2range [0:500<*]
+set y2range [0:100<*]
 set y2tics
 #set linetype 1 lc rgb "dark-red" lw 3
 #set linetype 2 lc rgb "dark-blue" lw 3

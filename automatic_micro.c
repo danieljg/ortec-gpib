@@ -128,17 +128,18 @@ int main () {
 
  //one-infinite-loop
  for(i=0;;i++) {
+ printf("%i",i);
  //reset averages
  average1=0.0; average2=0.0; average3=0.0; averageb=0.0;
  //sound
  if( i==0 || i%(2*nmod)==0 ) {
-  system("play -n synth 0.05 sine 1000-2500");
+  system("play -q -n synth 0.05 sine 1000-2500");
  }
 
  if( i==0 || i%nmod==0 ) {
-  system("play -n synth 0.05 sine 2000-3000");
+  system("play -q -n synth 0.05 sine 2000-3000");
  }
- system("play -n synth 0.1 sine 400-4000");
+ system("play -q -n synth 0.1 sine 400-4000");
   //counting loop
   for(count_idx=1 ; count_idx <= counts_av ; count_idx++) {
   //clear counters
@@ -161,7 +162,7 @@ int main () {
   average1=average1+data1; average2=average2+data2; average3=average3+data3; averageb=averageb+datab;
   }
  //sound
- system("play -n synth 0.1 sine 4000-400");
+ system("play -q -n synth 0.1 sine 4000-400");
  //compute average
  average1=average1/counts_av; average2=average2/counts_av;
  average3=average3/counts_av; averageb=averageb/counts_av;
@@ -193,6 +194,6 @@ int main () {
  puts("REMEMBER TO STORE THE DATA!!!");
  puts("else, you'll suffer...");
  //end sound
- system("play -n synth 1 sine 800-400");
+ system("play -q -n synth 1 sine 800-400");
  return 0;
 }

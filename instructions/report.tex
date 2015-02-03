@@ -33,17 +33,17 @@
 In modern Linux systems, those with kernel versions 2.6 or newer, one can use a National Instruments USB-GPIB-HS interface with very little trouble by using the Linux-GPIB package and following these instructions. For maximum compatibility, you should make sure you are running a Debian-based system like Ubuntu or Linux Mint (only Linux Mint 15 has been tested). Please make sure you have a working internet connection and that your user account has permissions to run the \texttt{sudo} command; if there is only one user account, then this will most likely be the case.
 
 \section{Installation}
-If you are working on a newly installed system, it might be needed to install the compilation tools. In order to do so, you type at the terminal prompt:
+If you are working on a newly installed system, it might be needed to install the compilation tools. In order to do so, please type the following at the terminal prompt:
  \begin{verbatim}
 sudo apt-get install build-essential
  \end{verbatim}
-You will be asked to input your administrative password. This should only take a couple of minutes.
+You will be asked to input your administrative password. This will install the compiler infra-structure and should only take a couple of minutes.
 
 Navigate with a web browser to 
  \begin{verbatim}
 sourceforge.net/projects/linux-gpib
  \end{verbatim}
-and proceed to download the latest version of the package (As of writing, 3.2.19) and decompress the contents in an accessible location on the filesystem (most easily done by double clicking on the compressed file icon and using the gui that appears). Consider reading the README file.
+and proceed to download the latest version of the package (As of writing, 3.2.19). Decompress the contents in an accessible location on the filesystem (most easily done by double clicking on the compressed file on most graphical systems). Consider reading the README file that is included in the files.
 
 Compile the source drivers by passing the following commands to the terminal prompt:
  \begin{verbatim}
@@ -55,7 +55,7 @@ make
  \begin{verbatim}
 sudo make install
  \end{verbatim}
-This last command will probably request your password once again (depending on the time that has elapsed since the keyring was last unlocked). After this has been completed, the device drivers for GPIB devices have been installed and are almost ready to be used; either restart the computer to load the new kernel modules or else type the following command to do it manually:
+This last command will probably request your password once again, please provide it and wait while the installation takes place. After this has been completed, the device drivers for GPIB devices have been installed and are almost ready to be used; you can either restart the computer to load the new kernel modules or else type the following command to do it manually:
  \begin{verbatim}
 sudo modprobe ni_usb_gpib
  \end{verbatim}
@@ -63,17 +63,20 @@ sudo modprobe ni_usb_gpib
 This completes the installation of the device drivers.
 
 \section{Configuration}
-There are many different GPIB boards which can be used with the installed drivers. The system requires specifying which device driver must be loaded by modification of a plain-text configuration file located at \texttt{/etc/gpib.conf}. This file is write-protected for regular users so it must be opened with a suitably enabled text editor. A simple graphical editor which is usually available is  \texttt{gedit}, you may run a super user instance of this program as
+There are many different GPIB boards which can be used with the installed drivers. The system requires specifying which device driver must be loaded by modification of a plain-text configuration file located at \texttt{/etc/gpib.conf}. This file is write-protected for regular users so it must be opened with a text editor with administrator privileges. A simple graphical editor which is usually available is  \texttt{gedit}, you may run a super user instance of this program as
 \begin{verbatim}
 gksudo gedit /etc/gpib.conf &
  \end{verbatim}
-Notice this is  \texttt{gksudo} and not \texttt{sudo}! This is the correct form of the command for graphical programs. The ampersand \texttt{\&} is used to prevent the terminal from being locked while the graphical program runs (and is not strictly necessary).
+Notice this is  \texttt{gksudo} and not \texttt{sudo}! This is the correct form of the command for graphical programs. The ampersand \texttt{\&} is used to prevent the terminal from being locked while the graphical program runs (and is not strictly necessary). If \texttt{gksudo} is not installed, then you can install it simply by typing
+\begin{verbatim}
+sudo apt-get install gksudo
+ \end{verbatim}
 
 In case  \texttt{gedit} is not available, an old school terminal editor which is always* available is \texttt{nano}, you may run this as a super user with
 \begin{verbatim}
 sudo nano /etc/gpib.conf
 \end{verbatim}
-Once within the file, which was placed there as a placeholder by the installation procedure, you must proceed to modify it by changing the \texttt{board type} variable to read \texttt{"ni\_usb\_b"} and, if you are going to work with the Ortec 974 counter, setting up a device to read \texttt{pad = 4}. You may also change the names of the board (from the \texttt{"violet"} default) and the device (perhaps to read \texttt{"counter"}). The rest of the parameters need not be changed as the defaults are good for our board.
+Once within the editor you will see the contents of the file, which was placed there as a placeholder by the installation procedure, you must proceed to modify it by changing the \texttt{board type} variable to read \texttt{"ni\_usb\_b"} and, if you are going to work with the Ortec 974 counter. You may also choose to set up a device to read \texttt{pad = 4} (look at the end of the file), though this is to provide a facility which is not used in the code provided by the author (as you can tell by the fact that the Ortec 994 is not listed, yet it works well in the example code). You may also change the names of the board (from the \texttt{"violet"} default) and the device (perhaps to read \texttt{"counter"}). The rest of the parameters need not be changed as the defaults are good for our board.
 
 This next part requires knowing which kernel version you are running. Either run the command \texttt{uname -a} or look around in the folder \texttt{/lib/modules/} for the largest version number. Write this number down. Now check that there is a folder with address \texttt{/etc/ld.so.conf.d/}. In case there is, continue with the following. Create a new text file as follows
 \begin{verbatim}
@@ -130,5 +133,9 @@ All of the code I've developed, which includes the interesting \texttt{ortec.c},
 https://github.com/danieljg/ortec-gpib
 \end{verbatim}
 Please mind the \texttt{LICENSE} file, as it concerns my copyright.
+
+\section{Hack to provide a keyboard killswitch}
+
+The killswitch functions are provided by the \texttt{ncurses} library. This, however, includes a symbol within its compiled object code which collides with a name defined by gpib-linux. The solution to using both involves changing the name of one the colliding variables and is described below. It should probably be copy-pasted into the terminal, unless you know what you're doing.
 
 \end{document}
